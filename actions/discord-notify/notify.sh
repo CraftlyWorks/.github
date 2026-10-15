@@ -102,8 +102,8 @@ payload=$(jq -n \
   | (try (now - ($started | fromdateiso8601) | floor | duration) catch null) as $took
 
   | {
-      username: "CraftlyWorks CI",
-      avatar_url: "https://github.com/CraftlyWorks.png",
+      # No avatar_url, so Discord shows the HallowPrison picture set on the webhook.
+      username: "HallowPrison Deployments",
       allowed_mentions: {parse: []},
       embeds: [{
         color: $look.color,
