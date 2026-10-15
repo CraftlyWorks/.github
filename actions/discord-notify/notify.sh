@@ -16,6 +16,8 @@ event="${GITHUB_EVENT_PATH:-}"
 # Duration needs actions:read; a workflow that narrowed its permissions just goes without it.
 started=$(timeout 10 gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
   --jq .run_started_at 2>/dev/null || true)
+# A 403 comes back on stdout as an error body, not a timestamp.
+[[ "$started" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$ ]] || started=""
 
 # Push events carry their commits; anything else (dispatch) reads the one commit from the checkout.
 head=$(git log -1 --format='%s%x1f%an' "$SHA" 2>/dev/null || true)
@@ -97,7 +99,7 @@ payload=$(jq -n \
      # A step that never ran leaves `` behind, which is still empty.
      | select(.name != "" and (.value | gsub("[`\\s]"; "")) != "")] as $extra
 
-  | (if $started != "" then (now - ($started | fromdateiso8601) | floor | duration) else null end) as $took
+  | (try (now - ($started | fromdateiso8601) | floor | duration) catch null) as $took
 
   | {
       username: "CraftlyWorks CI",
