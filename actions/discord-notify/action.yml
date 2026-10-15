@@ -1,0 +1,53 @@
+# One compact Discord embed per workflow run, sent straight to a webhook - no bot.
+#
+#   - name: Notify Discord
+#     if: always()
+#     uses: CraftlyWorks/.github/actions/discord-notify@v1
+#     with:
+#       webhook: ${{ secrets.DISCORD_WEBHOOK }}
+#       status: ${{ job.status }}
+#       title: Website deployed
+#       fields: |
+#         Live: [hallowprison.com](https://hallowprison.com)
+#
+# Never fails the job: a missing secret or a Discord outage is a warning, not a red deploy.
+name: Discord notify
+description: Posts a workflow result to a Discord webhook as one compact embed.
+
+inputs:
+  webhook:
+    description: Discord webhook URL.
+    required: true
+  status:
+    description: "`job.status` - success, failure or cancelled."
+    required: true
+  title:
+    description: Title on success. Failure and cancel titles are derived from the workflow name.
+    required: false
+    default: ""
+  fields:
+    description: "One `Name: value` per line, shown inline. Lines with an empty value are dropped."
+    required: false
+    default: ""
+  files:
+    description: List the pushed files on success.
+    required: false
+    default: "true"
+  sha:
+    description: Commit to report when it is not the one the workflow ran on (e.g. a dispatched ref).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        WEBHOOK: ${{ inputs.webhook }}
+        STATUS: ${{ inputs.status }}
+        TITLE: ${{ inputs.title }}
+        FIELDS: ${{ inputs.fields }}
+        FILES: ${{ inputs.files }}
+        SHA: ${{ inputs.sha || github.sha }}
+        GH_TOKEN: ${{ github.token }}
+      run: '"$GITHUB_ACTION_PATH/notify.sh"'
